@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamil Songs 🎵</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+    body {
+      background: #111;
+      color: white;
+    }
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      background: #222;
+    }
+    header h1 {
+      color: #ff5252;
+      margin-right: 1rem;
+    }
+    .search {
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      border: none;
+      width: 250px;
+    }
+    #content {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .song {
+      background: #333;
+      margin: 1rem;
+      border-radius: 10px;
+      padding: 10px;
+      width: 220px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .song:hover {
+      transform: scale(1.05);
+    }
+    .song img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .song-info {
+      margin-top: 5px;
+      text-align: center;
+    }
+    .song-info h3 {
+      font-size: 16px;
+    }
+    .song-info span {
+      font-size: 14px;
+      color: #aaa;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      width: 300px;
+      position: relative;
+    }
+    .modal-content img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-top: 10px;
+    }
+    button {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    button:hover {
+      color: #ff5252;
+    }
+    input[type="range"] {
+      width: 70px;
+    }
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 30px;
+      cursor: pointer;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: #222;
+      color: #ff5252;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎶 Vibe la Methapom Hub</h1>
+  <form id="form">
+    <input type="text" id="search" placeholder="Search Tamil Songs..." class="search"/>
+  </form>
+</header>
+
+<div id="content"></div>
+
+<!-- Modal for song player -->
+<div id="songModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <img id="modalImg" src="" alt="" />
+    <h2 id="modalTitle"></h2>
+    <div class="controls">
+      <button id="playBtn">▶️</button>
+      <button id="volumeIcon">🔊</button>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+      <select id="speed">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+      </select>
+      <a id="downloadBtn" href="" download>
+        <button>⬇️</button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer>Created By Anbarasu ❤️</footer>
+
+<script>
+  const main = document.getElementById("content");
+  const form = document.getElementById("form");
+  const search = document.getElementById("search");
+  const modal = document.getElementById("songModal");
+  const modalImg = document.getElementById("modalImg");
+  const modalTitle = document.getElementById("modalTitle");
+  const playBtn = document.getElementById("playBtn");
+  const volumeIcon = document.getElementById("volumeIcon");
+  const volume = document.getElementById("volume");
+  const speed = document.getElementById("speed");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const closeBtn = document.querySelector(".close");
+
+  let currentAudio = null;
+  let muted = false;
+
+  getSongs("tamil");
+
+  async function getSongs(term) {
+    const url = `https://itunes.apple.com/search?term=${term}&country=in&media=music&limit=30`;
+    const res = await fetch(url);
+    const data = await res.json();
+    showSongs(data.results.filter(s => s.primaryGenreName && s.primaryGenreName.toLowerCase().includes("tamil")));
+  }
+
+  function showSongs(songs) {
+    main.innerHTML = "";
+    if (songs.length === 0) {
+      main.innerHTML = "<p>No Songs Found</p>";
+      return;
+    }
+
+    songs.forEach(song => {
+      const songEl = document.createElement("div");
+      songEl.classList.add("song");
+      const releaseYear = song.releaseDate ? new Date(song.releaseDate).getFullYear() : "N/A";
+      songEl.innerHTML = `
+        <img src="${song.artworkUrl100}" alt="${song.trackName}">
+        <div class="song-info">
+          <h3>${song.trackName}</h3>
+          <span>${releaseYear}</span>
+        </div>
+      `;
+      songEl.addEventListener("click", () => { openModal(song); });
+      main.appendChild(songEl);
+    });
+  }
+
+  function openModal(song) {
+    modal.style.display = "flex";
+    modalImg.src = song.artworkUrl100;
+    modalTitle.textContent = song.trackName;
+    downloadBtn.href = song.previewUrl;
+    downloadBtn.download = song.trackName + ".mp3";
+
+    if (currentAudio) { currentAudio.pause(); playBtn.textContent = "▶️"; }
+
+    currentAudio = new Audio(song.previewUrl);
+    currentAudio.volume = volume.value;
+    currentAudio.playbackRate = speed.value;
+  }
+
+  playBtn.addEventListener("click", () => {
+    if (currentAudio.paused) {
+      currentAudio.play();
+      playBtn.textContent = "⏸️";
+    } else {
+      currentAudio.pause();
+      playBtn.textContent = "▶️";
+    }
+  });
+
+  volumeIcon.addEventListener("click", () => {
+    if (!currentAudio) return;
+    muted = !muted;
+    currentAudio.muted = muted;
+    volumeIcon.textContent = muted ? "🔇" : "🔊";
+  });
+
+  volume.addEventListener("input", () => {
+    if (currentAudio) currentAudio.volume = volume.value;
+  });
+
+  speed.addEventListener("change", () => {
+    if (currentAudio) currentAudio.playbackRate = speed.value;
+  });
+
+  closeBtn.addEventListener("click", () => {
+    if (currentAudio) currentAudio.pause();
+    modal.style.display = "none";
+  });
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const term = search.value.trim();
+    if (term) getSongs(term + " tamil");
+    search.value = "";
+  });
+</script>
+
+</body>
+</html>
